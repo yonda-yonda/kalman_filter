@@ -3,13 +3,15 @@
 import types
 import numpy as np
 import sys
+import os
 import io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-sys.path.append("../")
+path = os.path.join(os.path.dirname(__file__), '../')
+sys.path.append(path)
 from extended_kalman_filter import *
 from unscented_kalman_filter import *
 
@@ -18,7 +20,10 @@ print('非線形カルマンフィルターデモ比較1')
 np.random.seed(1024)
 
 def set_kalman_filter_functions(dt):
-
+    '''
+    「カルマンフィルタの基礎」足立修一,丸田一郎 例題7.4
+        状態推定のベンチマーク
+    '''
     def f(x, u):
         return np.mat([[ 0.2*x[0,0] + 25*x[0,0]/(1 + x[0,0]*x[0,0]) + 8*math.cos(1.2*u[0,0]) ]])
 
@@ -80,29 +85,31 @@ for i in range(0,step):
 
 fig, axarr = plt.subplots(3,2)
 
-axarr[0,0].plot(np.asarray(X_state)[0,:], 'y-', linewidth=2)
-axarr[0,0].plot(np.asarray(X_observed)[0,:], 'cx', linewidth=1)
-axarr[0,0].plot(np.asarray(ekf.get_estimate_value())[0,:], 'g-', linewidth=1)
+axarr[0,0].plot(np.asarray(X_state)[0,:], 'y-', label='true', linewidth=2)
+axarr[0,0].plot(np.asarray(X_observed)[0,:], 'cx', label='observed', linewidth=1)
+axarr[0,0].plot(np.asarray(ekf.get_estimate_value())[0,:], 'g-', label='extended', linewidth=1)
 axarr[0,0].set_title('extended', fontsize=8)
 axarr[0,0].set_ylabel('val', fontsize=8)
 axarr[0,0].tick_params(labelsize=6)
+axarr[0,0].legend(fontsize=8)
 axarr[0,0].set_ylim(-40, 90)
 axarr[0,0].grid(True)
 
-axarr[1,0].plot(np.asarray(X_state)[0,:], 'y-', linewidth=2)
-axarr[1,0].plot(np.asarray(X_observed)[0,:], 'cx', linewidth=1)
-axarr[1,0].plot(np.asarray(ukf1.get_estimate_value())[0,:], 'g-', linewidth=1)
+axarr[1,0].plot(np.asarray(X_state)[0,:], 'y-', label='true', linewidth=2)
+axarr[1,0].plot(np.asarray(X_observed)[0,:], 'cx', label='observed', linewidth=1)
+axarr[1,0].plot(np.asarray(ukf1.get_estimate_value())[0,:], 'g-', label='unscented '+str(ukf1.kappa), linewidth=1)
 axarr[1,0].set_title('unscented', fontsize=8)
 axarr[1,0].set_ylabel('val', fontsize=8)
 axarr[1,0].tick_params(labelsize=6)
+axarr[1,0].legend(fontsize=8)
 axarr[1,0].set_ylim(-40, 90)
 axarr[1,0].grid(True)
 
-ekf_diff = np.asarray(np.asarray(X_state)-np.asarray(ekf.get_estimate_value()))**2
-ukf1_diff = np.asarray(np.asarray(X_state)-np.asarray(ukf1.get_estimate_value()))**2
+ekf_diff = np.sqrt((np.asarray(np.asarray(X_state)-np.asarray(ekf.get_estimate_value()))**2).sum(axis=0))
+ukf1_diff = np.sqrt((np.asarray(np.asarray(X_state)-np.asarray(ukf1.get_estimate_value()))**2).sum(axis=0))
 
-axarr[2,0].plot(T,np.sqrt(ekf_diff.sum(axis=0)), 'r-', label='extended', linewidth=1)
-axarr[2,0].plot(T,np.sqrt(ukf1_diff.sum(axis=0)), 'b-', label='unscented '+str(ukf1.kappa), linewidth=1)
+axarr[2,0].plot(T,ekf_diff, 'r-', label='extended '+' (sum'+str(round(ekf_diff.sum(),2))+')', linewidth=1)
+axarr[2,0].plot(T,ukf1_diff, 'b-', label='unscented '+str(ukf1.kappa)+ ' (sum'+str(round(ukf1_diff.sum(),2))+')', linewidth=1)
 axarr[2,0].set_title('diff from true to estimate', fontsize=8)
 axarr[2,0].set_ylabel('diff', fontsize=8)
 axarr[2,0].tick_params(labelsize=6)
@@ -110,29 +117,31 @@ axarr[2,0].legend(fontsize=8)
 axarr[2,0].set_ylim(0, 90)
 axarr[2,0].grid(True)
 
-axarr[0,1].plot(np.asarray(X_state)[0,:], 'y-', linewidth=2)
-axarr[0,1].plot(np.asarray(X_observed)[0,:], 'cx', linewidth=1)
-axarr[0,1].plot(np.asarray(ukf2.get_estimate_value())[0,:], 'g-', linewidth=1)
+axarr[0,1].plot(np.asarray(X_state)[0,:], 'y-', label='true', linewidth=2)
+axarr[0,1].plot(np.asarray(X_observed)[0,:], 'cx', label='observed', linewidth=1)
+axarr[0,1].plot(np.asarray(ukf2.get_estimate_value())[0,:], 'g-', label='unscented '+str(ukf2.kappa), linewidth=1)
 axarr[0,1].set_title('extended', fontsize=8)
 axarr[0,1].set_ylabel('val', fontsize=8)
 axarr[0,1].tick_params(labelsize=6)
+axarr[0,1].legend(fontsize=8)
 axarr[0,1].set_ylim(-40, 90)
 axarr[0,1].grid(True)
 
-axarr[1,1].plot(np.asarray(X_state)[0,:], 'y-', linewidth=2)
-axarr[1,1].plot(np.asarray(X_observed)[0,:], 'cx', linewidth=1)
-axarr[1,1].plot(np.asarray(ukf3.get_estimate_value())[0,:], 'g-', linewidth=1)
+axarr[1,1].plot(np.asarray(X_state)[0,:], 'y-', label='true', linewidth=2)
+axarr[1,1].plot(np.asarray(X_observed)[0,:], 'cx', label='observed', linewidth=1)
+axarr[1,1].plot(np.asarray(ukf3.get_estimate_value())[0,:], 'g-',label='unscented '+str(ukf3.kappa), linewidth=1)
 axarr[1,1].set_title('unscented', fontsize=8)
 axarr[1,1].set_ylabel('val', fontsize=8)
 axarr[1,1].tick_params(labelsize=6)
+axarr[1,1].legend(fontsize=8)
 axarr[1,1].set_ylim(-40, 90)
 axarr[1,1].grid(True)
 
-ukf2_diff = np.asarray(np.asarray(X_state)-np.asarray(ukf2.get_estimate_value()))**2
-ukf3_diff = np.asarray(np.asarray(X_state)-np.asarray(ukf3.get_estimate_value()))**2
+ukf2_diff = np.sqrt((np.asarray(np.asarray(X_state)-np.asarray(ukf2.get_estimate_value()))**2).sum(axis=0))
+ukf3_diff = np.sqrt((np.asarray(np.asarray(X_state)-np.asarray(ukf3.get_estimate_value()))**2).sum(axis=0))
 
-axarr[2,1].plot(T,np.sqrt(ukf2_diff.sum(axis=0)), 'r-', label='unscented '+str(ukf2.kappa), linewidth=1)
-axarr[2,1].plot(T,np.sqrt(ukf3_diff.sum(axis=0)), 'b-', label='unscented '+str(ukf3.kappa), linewidth=1)
+axarr[2,1].plot(T,ukf2_diff, 'r-', label='unscented '+str(ukf2.kappa)+ ' (sum'+str(round(ukf2_diff.sum(),2))+')', linewidth=1)
+axarr[2,1].plot(T,ukf3_diff, 'b-', label='unscented '+str(ukf3.kappa)+ ' (sum'+str(round(ukf3_diff.sum(),2))+')', linewidth=1)
 axarr[2,1].set_title('diff from true to estimate', fontsize=8)
 axarr[2,1].set_ylabel('diff', fontsize=8)
 axarr[2,1].tick_params(labelsize=6)
@@ -140,4 +149,4 @@ axarr[2,1].legend(fontsize=8)
 axarr[2,1].set_ylim(0, 90)
 axarr[2,1].grid(True)
 
-plt.savefig('img/nonlinear_kalman_filter_ex1.png')
+plt.savefig(os.path.join(os.path.dirname(__file__), 'img/nonlinear_kalman_filter_ex1.png'))
